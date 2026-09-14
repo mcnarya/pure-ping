@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import TargetCard from './components/TargetCard';
 import AddTargetModal from './components/AddTargetModal';
+import SuiteMenu from './components/SuiteMenu';
 
 export default function App() {
   const [targets, setTargets] = useState([]);
@@ -301,6 +302,8 @@ export default function App() {
             >
               <RefreshCw size={15} />
             </button>
+
+            <SuiteMenu />
 
             <button
               type="button"
