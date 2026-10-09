@@ -4,12 +4,13 @@
 
 ## Features
 
-- ⚡ **Featherlight Heartbeat Engine**: Non-blocking asynchronous HTTP/HTTPS probe scheduler with sub-second latency measurements.
+- ⚡ **Multi-Protocol Probes**: Non-blocking asynchronous scheduler supporting **HTTP/HTTPS**, **TCP Port Sockets** (SSH, Postgres, Redis), **DNS Lookups**, and **ICMP Pings**.
+- 🛡️ **Embeddable SVG Status Badges**: Generate live shields.io-style SVG badges (`/api/badge/:id.svg` or `?metric=uptime|latency`) for GitHub READMEs, Pure Glance dashboards, and status pages.
 - 📊 **Live Latency Sparklines**: Visual response time graphs and 24h rolling uptime percentage metrics.
 - 🩺 **Zero-Database Persistence**: Stores monitoring targets and configurations in `/data/targets.json`.
 - 🔔 **Instant Webhook Alerts**: Send alerts directly to `ntfy.sh`, Discord, Telegram, or custom webhooks when endpoints go down or recover.
 - 🎯 **Pre-Seeded Pure Homelab Targets**: Automatically pre-configured to monitor Pure Hub, Pure Feed, Pure OTP, Pure Read, Pure Clone, and Pure Note.
-- 🎨 **Pure Aesthetic Themes**: High-contrast Material 3 Dark, Material Light, Nord Dark, Nord Light, Dracula, Sunset, and Cyberpunk. Synced dynamically with Pure Hub.
+- 🎨 **Pure Aesthetic Themes**: High-contrast Material 3 Dark, Material Light, Nord Dark, Nord Light, Dracula, Sunset, Cyberpunk, Tokyo Night, Catppuccin, Rose Pine, Forest, and Solarized. Synced dynamically with Pure Hub.
 - 🔒 **Optional Password Gate**: Protect your dashboard with `APP_PASSWORD`.
 - 🐳 **Lightweight Alpine Container**: Extremely small footprint with zero external database dependencies.
 

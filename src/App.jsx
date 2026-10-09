@@ -338,7 +338,7 @@ export default function App() {
             <Activity size={32} className="mx-auto mb-3 text-[var(--md-sys-color-primary)]" />
             <h3 className="text-base font-bold">No targets monitored</h3>
             <p className="text-xs text-[var(--md-sys-color-on-surface-variant)] mt-1 mb-4">
-              Add HTTP endpoints or homelab containers to start real-time heartbeat monitoring.
+              Add HTTP, TCP sockets, DNS records, or ICMP ping targets to start real-time heartbeat monitoring.
             </p>
             <button
               type="button"
@@ -357,6 +357,7 @@ export default function App() {
                 target={target}
                 onProbe={handleInstantProbe}
                 onDelete={handleDeleteTarget}
+                apiBase={apiBase}
               />
             ))}
           </div>

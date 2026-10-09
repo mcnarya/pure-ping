@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { X, Plus, Server } from 'lucide-react';
+import { X, Plus, Server, Globe, Cpu, Radio, Network } from 'lucide-react';
 
 export default function AddTargetModal({ isOpen, onClose, onAddTarget }) {
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
+  const [protocol, setProtocol] = useState('http');
   const [intervalSeconds, setIntervalSeconds] = useState(30);
 
   if (!isOpen) return null;
@@ -11,22 +12,50 @@ export default function AddTargetModal({ isOpen, onClose, onAddTarget }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name || !url) return;
-    onAddTarget({ name, url, intervalSeconds });
+    onAddTarget({ name, url, protocol, intervalSeconds });
     setName('');
     setUrl('');
+    setProtocol('http');
     setIntervalSeconds(30);
     onClose();
   };
 
-  const presets = [
-    { name: 'Pure Hub', url: 'http://pure-app:80/' },
-    { name: 'Pure Feed', url: 'http://pure-feed:3000/api/health/live' },
-    { name: 'Pure OTP', url: 'http://pure-otp:80/' },
-    { name: 'Pure Read', url: 'http://pure-read:3000/api/health' },
-    { name: 'Pure Clone', url: 'http://pure-clone:3000/api/health' },
-    { name: 'Pure Note', url: 'http://pure-note:3000/api/health' },
-    { name: 'Google DNS', url: 'https://8.8.8.8' }
+  const protocolOptions = [
+    { id: 'http', label: 'HTTP / HTTPS', icon: Globe, desc: 'Web apps, APIs, REST' },
+    { id: 'tcp', label: 'TCP Port', icon: Cpu, desc: 'SSH (22), DBs (5432), Redis' },
+    { id: 'dns', label: 'DNS Lookup', icon: Network, desc: 'Resolve domains & nameservers' },
+    { id: 'ping', label: 'ICMP Ping', icon: Radio, desc: 'Low-level network reachability' }
   ];
+
+  const presets = [
+    { name: 'Pure Hub', url: 'http://pure-app:80/', protocol: 'http' },
+    { name: 'Pure Feed', url: 'http://pure-feed:3000/api/health/live', protocol: 'http' },
+    { name: 'Pure Read', url: 'http://pure-read:3000/api/health', protocol: 'http' },
+    { name: 'SSH Server', url: '127.0.0.1:22', protocol: 'tcp' },
+    { name: 'PostgreSQL DB', url: '127.0.0.1:5432', protocol: 'tcp' },
+    { name: 'Cloudflare DNS', url: '1.1.1.1', protocol: 'ping' },
+    { name: 'Google DNS Resolve', url: 'google.com', protocol: 'dns' }
+  ];
+
+  const getPlaceholder = () => {
+    switch (protocol) {
+      case 'tcp': return 'e.g. 192.168.1.50:22 or db.lan:5432';
+      case 'dns': return 'e.g. pure.mcnarya.com or github.com';
+      case 'ping': return 'e.g. 192.168.1.1 or 8.8.8.8';
+      case 'http':
+      default: return 'e.g. https://example.com/health or http://host:port/';
+    }
+  };
+
+  const getUrlLabel = () => {
+    switch (protocol) {
+      case 'tcp': return 'Target Host:Port (TCP)';
+      case 'dns': return 'Domain / Hostname (DNS)';
+      case 'ping': return 'Target Host or IP (ICMP Ping)';
+      case 'http':
+      default: return 'Endpoint URL (HTTP / HTTPS)';
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
@@ -48,6 +77,34 @@ export default function AddTargetModal({ isOpen, onClose, onAddTarget }) {
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* Protocol Selector Tabs */}
+          <div>
+            <label className="block text-xs font-medium text-[var(--md-sys-color-on-surface-variant)] mb-1.5">
+              Probe Protocol
+            </label>
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              {protocolOptions.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = protocol === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setProtocol(opt.id)}
+                    className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[var(--md-sys-color-primary-container)] border-[var(--md-sys-color-primary)] text-[var(--md-sys-color-primary)] font-bold shadow-xs'
+                        : 'bg-[var(--md-sys-color-surface)] border-[var(--md-sys-color-outline)] text-[var(--md-sys-color-on-surface-variant)] hover:text-[var(--md-sys-color-on-surface)]'
+                    }`}
+                  >
+                    <Icon size={16} className="mb-1" />
+                    <span className="text-[11px] font-semibold">{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-medium text-[var(--md-sys-color-on-surface-variant)] mb-1">
               Target Name
@@ -55,7 +112,7 @@ export default function AddTargetModal({ isOpen, onClose, onAddTarget }) {
             <input
               type="text"
               required
-              placeholder="e.g. My Nextcloud or Pure Read"
+              placeholder="e.g. My Nextcloud or Home Gateway"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-xs bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)] border border-[var(--md-sys-color-outline)] focus:outline-none focus:border-[var(--md-sys-color-primary)]"
@@ -64,12 +121,12 @@ export default function AddTargetModal({ isOpen, onClose, onAddTarget }) {
 
           <div>
             <label className="block text-xs font-medium text-[var(--md-sys-color-on-surface-variant)] mb-1">
-              Endpoint URL (HTTP / HTTPS)
+              {getUrlLabel()}
             </label>
             <input
-              type="url"
+              type="text"
               required
-              placeholder="https://example.com/health or http://host:port/"
+              placeholder={getPlaceholder()}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-xs bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)] border border-[var(--md-sys-color-outline)] focus:outline-none focus:border-[var(--md-sys-color-primary)] font-mono"
@@ -105,10 +162,11 @@ export default function AddTargetModal({ isOpen, onClose, onAddTarget }) {
                   onClick={() => {
                     setName(p.name);
                     setUrl(p.url);
+                    setProtocol(p.protocol);
                   }}
                   className="px-2 py-1 rounded bg-[var(--md-sys-color-surface)] hover:bg-[var(--md-sys-color-primary)]/15 border border-[var(--md-sys-color-outline)] text-[10.5px] text-[var(--md-sys-color-on-surface-variant)] hover:text-[var(--md-sys-color-on-surface)] transition-colors cursor-pointer"
                 >
-                  {p.name}
+                  {p.name} <span className="opacity-60 text-[9px]">({p.protocol.toUpperCase()})</span>
                 </button>
               ))}
             </div>

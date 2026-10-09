@@ -13,8 +13,10 @@ import {
 import {
   probeSingleTarget,
   startProberScheduler,
-  stopProberScheduler
+  stopProberScheduler,
+  detectProtocol
 } from './prober.js';
+import { generateStatusBadge } from './badge.js';
 
 dotenv.config();
 
@@ -70,16 +72,18 @@ app.get(['/api/targets', '/ping/api/targets'], requireAuth, async (req, res) => 
 // Add Target
 app.post(['/api/targets', '/ping/api/targets'], requireAuth, async (req, res) => {
   try {
-    const { name, url, intervalSeconds = 30, timeoutMs = 5000 } = req.body;
+    const { name, url, intervalSeconds = 30, timeoutMs = 5000, protocol } = req.body;
     if (!name || !url) {
       return res.status(400).json({ error: 'Name and URL are required' });
     }
 
+    const resolvedProtocol = detectProtocol(url, protocol);
     const id = name.toLowerCase().replace(/[^a-z0-9_-]+/g, '-') + '-' + Date.now().toString(36);
     const newTarget = {
       id,
       name,
       url,
+      protocol: resolvedProtocol,
       intervalSeconds: parseInt(intervalSeconds, 10) || 30,
       timeoutMs: parseInt(timeoutMs, 10) || 5000,
       status: 'pending',
@@ -113,12 +117,16 @@ app.put(['/api/targets/:id', '/ping/api/targets/:id'], requireAuth, async (req, 
     }
 
     const current = targets[index];
-    const { name, url, intervalSeconds, timeoutMs } = req.body;
+    const { name, url, intervalSeconds, timeoutMs, protocol } = req.body;
+
+    const newUrl = url || current.url;
+    const resolvedProtocol = protocol ? detectProtocol(newUrl, protocol) : (current.protocol || detectProtocol(newUrl));
 
     const updated = {
       ...current,
       name: name || current.name,
-      url: url || current.url,
+      url: newUrl,
+      protocol: resolvedProtocol,
       intervalSeconds: intervalSeconds ? parseInt(intervalSeconds, 10) : current.intervalSeconds,
       timeoutMs: timeoutMs ? parseInt(timeoutMs, 10) : current.timeoutMs
     };
@@ -145,6 +153,38 @@ app.delete(['/api/targets/:id', '/ping/api/targets/:id'], requireAuth, async (re
   } catch (err) {
     console.error('[pure-ping] Failed to delete target:', err);
     res.status(500).json({ error: 'Failed to delete target' });
+  }
+});
+
+// Embeddable Status Badge (SVG) - Public endpoint (no auth required for badge embedding)
+app.get([
+  '/api/badge/:id.svg',
+  '/ping/api/badge/:id.svg',
+  '/api/badge/:id',
+  '/ping/api/badge/:id',
+  '/api/targets/:id/badge.svg',
+  '/ping/api/targets/:id/badge.svg'
+], async (req, res) => {
+  try {
+    const rawId = req.params.id || '';
+    const id = rawId.replace(/\.svg$/i, '');
+    const targets = await readTargets();
+    const target = targets.find(t => t.id === id);
+
+    const metric = req.query.metric || 'status'; // 'status' | 'uptime' | 'latency'
+    const label = req.query.label || (target ? target.name : 'pure-ping');
+
+    const svg = generateStatusBadge(
+      target || { name: label, status: 'down', uptimePercentage: 0, latencyMs: 0 },
+      { metric, label }
+    );
+
+    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(svg);
+  } catch (err) {
+    console.error('[pure-ping] Badge generation error:', err);
+    res.status(500).send('<svg xmlns="http://www.w3.org/2000/svg" width="90" height="20"><text y="14" font-size="11">error</text></svg>');
   }
 });
 
